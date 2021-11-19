@@ -1,0 +1,66 @@
+{
+    "parameters": {
+     "tagName": {
+       "type": "String",
+       "metadata": {
+         "displayName": "Tag Name",
+         "description": "The Tag namne to audit against (i.e. Environment, CostCenter, etc.)"
+       }
+     },
+     "tagValue": {
+       "type": "String",
+       "metadata": {
+         "displayName": "Tag Value",
+         "description": "Value of the tag to audit and apply against (i.e. Prod/UAT/TEST, 12345, etc.)"
+       }
+     }
+   },
+   "policyRule": {
+     "if": {
+       "allOf": [
+         {
+           "field": "type",
+           "equals": "Microsoft.Compute/disks"
+         },
+         {
+           "field": "[concat('tags[', parameters('tagName'), ']')]",
+           "equals": "[parameters('tagValue')]"
+         }
+       ]
+     },
+     "then": {
+       "effect": "deployIfNotExists",
+       "details": {
+         "type": "Microsoft.Authorization/locks",
+         "existenceCondition": {
+           "field": "Microsoft.Authorization/locks/level",
+           "equals": "CanNotDelete"
+         },
+         "roleDefinitionIds": [
+           "/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635"
+         ],
+         "deployment": {
+           "properties": {
+             "mode": "incremental",
+             "template": {
+               "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+               "contentVersion": "1.0.0.0",
+               "resources": [
+                 {
+                   "type": "Microsoft.Authorization/locks",
+                   "apiVersion": "2017-04-01",
+                   "name": "ResourceLock",
+                   "properties": {
+                     "level": "CanNotDelete",
+                     "notes": "This is a production disk deletion of the Disk is not permitted"
+                   }
+                 }
+               ]
+             }
+           }
+         }
+       }
+     }
+   }
+ }
+ 
